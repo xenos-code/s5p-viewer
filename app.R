@@ -67,14 +67,14 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-          numericInput("w", "xmin (EPSG:4326)", 6.09, min = 0, step = .01),
-          numericInput("s", "ymin (EPSG:4326)", 46.15, min = 0, step = .01),
-          numericInput("e", "xmax (EPSG:4326)", 6.99, min = 0, step = .01),
-          numericInput("n", "ymax (EPSG:4326)", 46.57, min = 0, step = .01),
+          numericInput("w", "xmin (EPSG:4326)", 10.35, min = 0, step = .01),
+          numericInput("s", "ymin (EPSG:4326)", 46.10, min = 0, step = .01),
+          numericInput("e", "xmax (EPSG:4326)", 12.55, min = 0, step = .01),
+          numericInput("n", "ymax (EPSG:4326)", 47.13, min = 0, step = .01),
           
           # Select time gap
           dateRangeInput("date1date2", "Select timeframe", start = "2019-01-01", end = "2019-01-31",
-                         min = "2018-01-01", max = "2021-12-31", startview =  "year", weekstart = "1"),
+                         min = "2019-01-01", max = "2020-12-31", startview =  "year", weekstart = "1"),
           
           numericInput("cloud", "cloud cover to be considered? (0 to 1 - 0.5 is recommended)", 0.5, min = 0, max = 1, step = .1),
           
@@ -277,27 +277,20 @@ server <- function(input, output) {
             
             print(paste0('this may take a moment, your process is ', jobs[[job$id]]$status))
             Sys.sleep(60)
-            
             jobs = list_jobs()
             
-            if (jobs[[job$id]]$status == 'finished'){
+            if (jobs[[job$id]]$status == 'finished' | jobs[[job$id]]$status == 'error'){
               
-              print("downloading results")
-              
-              download_results(job = job$id, folder = "data/")
-            }
-            
-            if (jobs[[job$id]]$status == 'error') {
-              
-              print('error!')
               break
               
             }
           }
-          
+          print("downloading results")
+          download_results(job = job$id, folder = "data/")
           ts_mean = fromJSON(file = "data/timeseries.json")
           print("mean time series read")
           
+          # time-series_max
           result = p$save_result(data = datacube_max,
                                  format = formats$output$JSON)
           job = create_job(graph=result, title = "time-series-max")
@@ -309,20 +302,15 @@ server <- function(input, output) {
             Sys.sleep(60)
             
             jobs = list_jobs()
-            if (jobs[[job$id]]$status == 'finished'){
-              
-              download_results(job = job$id, folder = "data/")
-            }
-            
-            if (jobs[[job$id]]$status == 'error') {
-              
-              print('error!')
+            if (jobs[[job$id]]$status == 'finished' | jobs[[job$id]]$status == 'error'){
               
               break
             }
           }
-          
+          print("downloading results")
+          download_results(job = job$id, folder = "data/")
           ts_max = fromJSON(file = "data/timeseries.json")
+          print("max time series read")
           
         }, warning = function(w) {
           
@@ -339,27 +327,20 @@ server <- function(input, output) {
             
             print(paste0('this may take a moment, your process is ', jobs[[job$id]]$status))
             Sys.sleep(60)
-            
             jobs = list_jobs()
             
-            if (jobs[[job$id]]$status == 'finished'){
+            if (jobs[[job$id]]$status == 'finished' | jobs[[job$id]]$status == 'error'){
               
-              print("downloading results")
-              
-              download_results(job = job$id, folder = "data/")
-            }
-            
-            if (jobs[[job$id]]$status == 'error') {
-              
-              print('error!')
               break
               
             }
           }
-          
+          print("downloading results")
+          download_results(job = job$id, folder = "data/")
           ts_mean = fromJSON(file = "data/timeseries.json")
           print("mean time series read")
-          
+
+          # time-series-max
           result = p$save_result(data = datacube_max,
                                  format = formats$output$JSON)
           job = create_job(graph=result, title = "time-series-max")
@@ -371,20 +352,15 @@ server <- function(input, output) {
             Sys.sleep(60)
             
             jobs = list_jobs()
-            if (jobs[[job$id]]$status == 'finished'){
-              
-              download_results(job = job$id, folder = "data/")
-            }
-            
-            if (jobs[[job$id]]$status == 'error') {
-              
-              print('error!')
+            if (jobs[[job$id]]$status == 'finished' | jobs[[job$id]]$status == 'error'){
               
               break
             }
           }
-          
+          print("downloading results")
+          download_results(job = job$id, folder = "data/")
           ts_max = fromJSON(file = "data/timeseries.json")
+          print("max time series read")
           
         })
         
@@ -397,29 +373,22 @@ server <- function(input, output) {
                                format = formats$output$JSON)
         job = create_job(graph=result, title = "time-series-mean")
         start_job(job = job)
+        jobs = list_jobs()
         while (jobs[[job$id]]$status == 'running' | jobs[[job$id]]$status == 'queued' | jobs[[job$id]]$status == 'created' ){
           
           print(paste0('this may take a moment, your process is ', jobs[[job$id]]$status))
           Sys.sleep(60)
-          
-          if (jobs[[job$id]]$status == 'finished'){
+          jobs = list_jobs()
+          if (jobs[[job$id]]$status == 'finished' | jobs[[job$id]]$status == 'error'){
             
-            print("downloading results")
-            download_results(job = job$id, folder = "data/")
-            break
-          }
-          
-          if (jobs[[job$id]]$status == 'finished') {
-            
-            print('error!')
             break
             
           }
         }
-        
+        print("downloading results")
+        download_results(job = job$id, folder = "data/")
         ts_mean = fromJSON(file = "data/timeseries.json")
         print("mean time series read")
-        print(ts_mean)
         
         result = p$save_result(data = datacube_max,
                                format = formats$output$JSON)
@@ -432,21 +401,17 @@ server <- function(input, output) {
           Sys.sleep(60)
           
           jobs = list_jobs()
-          if (jobs[[job$id]]$status == 'finished'){
+          if (jobs[[job$id]]$status == 'finished' | jobs[[job$id]]$status == 'error'){
             
-            download_results(job = job$id, folder = "data/")
-          }
-          
-          if (jobs[[job$id]]$status == 'error') {
-            
-            print('error!')
             break
             
-          }}
+          }
+        }
+        print("downloading results")
+        download_results(job = job$id, folder = "data/")
         ts_max = fromJSON(file = "data/timeseries.json")
         print("max time series read")
-        print(ts_max)
-      }
+        }
       
       
         # no2 mean
@@ -479,13 +444,63 @@ server <- function(input, output) {
           parse(text=l)
         }
         
-        time = c(time,
-                 seq(as.Date(date1), as.Date(date2), length.out=length(no2)),
-                 seq(as.Date(date1), as.Date(date2), length.out=length(no2_max)))
-        data = c(no2_k$y, no2, no2_max)
-        group = c(rep("smoothed", length(no2_k$y)),
-                  rep("raw", length(no2)),
-                  rep("maximum", length(no2_max)))
+        # plotting
+        if (e <= 12.55 & w >= 10.35 & n <= 47.13 & s >= 46.10 & 
+            as.Date(date1) >= as.Date("2018-12-14") & 
+            as.Date(date2) <= as.Date("2021-12-31")){
+          
+          suppressPackageStartupMessages(library(readxl))
+          suppressPackageStartupMessages(library(dplyr))
+          suppressPackageStartupMessages(library(xts))
+          suppressPackageStartupMessages(library(treasuryTR))
+          
+          df = read_excel("rshiny_NO2_TM75_2017-2022.xlsx")
+          df = df %>% slice(5:n()) %>% dplyr::select(2:ncol(df))
+          
+          df = as.data.frame(df)
+          date = as.POSIXct(seq(0,3600*24*nrow(df)-1,by=24*3600), origin="2017-01-01")
+          df$date = as.Date(date)
+          xts_df = tibble_to_xts(df)
+          storage.mode(xts_df) = "integer"
+          
+          # interpolate
+          xts_df = na.approx(xts_df)
+          xts_df = na.omit(xts_df)
+          ##xts_df %>% head()
+          
+          # aggregate
+          agg = cbind(xts_df, rowMeans(xts_df))
+          
+          # convert to comparable scale
+          agg = agg * 10e-7
+          #agg %>% head()
+          
+          # filter by date 
+          filtered = agg[paste0(date1, "/", date2)]
+          local_dt = as.vector(filtered$rowMeans.xts_df.)
+          
+          time = c(time,
+                   seq(as.Date(date1), as.Date(date2), length.out=length(no2)),
+                   seq(as.Date(date1), as.Date(date2), length.out=length(no2_max)),
+                   seq(as.Date(date1), as.Date(date2), length.out=length(local_dt)))
+          
+          # to data frame
+          data = c(no2_k$y, no2, no2_max, local_dt)
+          group = c(rep("smoothed", length(no2_k$y)),
+                    rep("raw", length(no2)),
+                    rep("maximum", length(no2_max)),
+                    rep("local", length(local_dt)))
+          
+        } else{
+          time = c(time,
+                   seq(as.Date(date1), as.Date(date2), length.out=length(no2)),
+                   seq(as.Date(date1), as.Date(date2), length.out=length(no2_max)))
+          data = c(no2_k$y, no2, no2_max)
+          group = c(rep("smoothed", length(no2_k$y)),
+                    rep("raw", length(no2)),
+                    rep("maximum", length(no2_max)))
+        }
+        
         df = data.frame(time, data, group)
         
         #png('time-series-no2.png')

@@ -370,58 +370,70 @@ scientific_notation <- function(l) {
   parse(text=l)
 }
 
-time = c(time,
-         seq(as.Date(date1), as.Date(date2), length.out=length(no2)),
-         seq(as.Date(date1), as.Date(date2), length.out=length(no2_max)))
-data = c(no2_k$y, no2, no2_max)
-group = c(rep("smoothed", length(no2_k$y)),
+# plotting
+if (e <= 12.55 & w >= 10.35 & n <= 47.13 & s >= 46.10 & 
+    as.Date(date1) >= as.Date("2018-12-14") & 
+    as.Date(date2) <= as.Date("2021-12-31")){
+  
+  library(readxl)
+  library(dplyr)
+  library(xts)
+  library(treasuryTR)
+
+  df = read_excel("rshiny_NO2_TM75_2017-2022.xlsx")
+  df = df %>% slice(5:n()) %>% dplyr::select(2:ncol(df))
+  
+  df = as.data.frame(df)
+  date = as.POSIXct(seq(0,3600*24*nrow(df)-1,by=24*3600), origin="2017-01-01")
+  df$date = as.Date(date)
+  xts_df = tibble_to_xts(df)
+  storage.mode(xts_df) = "integer"
+  
+  # interpolate
+  xts_df = na.approx(xts_df)
+  xts_df = na.omit(xts_df)
+  ##xts_df %>% head()
+  
+  # aggregate
+  agg = cbind(xts_df, rowMeans(xts_df))
+  
+  # convert to comparable scale
+  agg = agg * 10e-7
+  #agg %>% head()
+  
+  # filter by date 
+  filtered = agg[paste0(date1, "/", date2)]
+
+  time = c(time,
+           seq(as.Date(date1), as.Date(date2), length.out=length(no2)),
+           seq(as.Date(date1), as.Date(date2), length.out=length(no2_max)),
+           seq(as.Date(date1), as.Date(date2), length.out=length(local_dt)))
+  
+  # to data frame
+  local_dt = as.vector(filtered$rowMeans.xts_df.)
+  data = c(no2_k$y, no2, no2_max, local_dt)
+  group = c(rep("smoothed", length(no2_k$y)),
+            rep("raw", length(no2)),
+            rep("maximum", length(no2_max)),
+            rep("local", length(local_dt)))
+
+} else{
+  time = c(time,
+           seq(as.Date(date1), as.Date(date2), length.out=length(no2)),
+           seq(as.Date(date1), as.Date(date2), length.out=length(no2_max)))
+  data = c(no2_k$y, no2, no2_max)
+  group = c(rep("smoothed", length(no2_k$y)),
           rep("raw", length(no2)),
           rep("maximum", length(no2_max)))
+}
+
 df = data.frame(time, data, group)
 
-png('time-series-no2.png')
+#png('time-series-no2.png')
 ggplot(df, aes(x=time, y=data, group = group, col = group, linetype = group)) +
   geom_line() +
   scale_y_continuous(labels=scientific_notation) +
   theme(legend.position="top") +
   theme(legend.title = element_blank())+
   xlab("Time") + ylab("Tropospheric NO2 Vertical Column (molec/cm²)")
-dev.off()
-
-####
-############
-
-#plot(no2, type = "l", xlab = "Time", ylab = c())
-#lines(no2_k, col = "red", lty = 22, lwd = 3)
-
-# remove
-#min_reducer = function(data,context) { 
- # return(p$min(data = data))
-#}
-
-#reduced = p$reduce_dimension(data = datacube, reducer = min_reducer, dimension="t")
-#reduced
-
-# 10km x 10km grid
-# threshold for quality flag and cloud cover
-# compute daily 30-day smoothed values (kernel smoothing) - missing from the side of the clowd
-# Interaction with daily, colour-coded maps (interactive + time-animation)
-# display of time series of smoothed,raw, and 30-day maximum values for locations selected
-# by user mouse clicks
-# comparison of time series of user-selected hot spots with time series of averages for
-# selected regions or for global averages. (this bbox or geojson compared to continent, to country...) + compare 
-
-#formats = list_file_formats()
-#result = p$save_result(data = datacube, format = formats$output$GTiff)
-#result
-
-# Batch Job Management
-#job = create_job(graph=result, title = "Example Title")
-#start_job(job = job)
-#jobs = list_jobs()
-#jobs # printed as a tibble or data.frame, but the object is a list
-#jobs$"vito-19677bea-488a-4c45-a197-de8bf8211020"
-#openeo::log_job("vito-19677bea-488a-4c45-a197-de8bf8211020")
-#describe_job(job = job)
-#list_results(job = job)
-#download_results(job = job, folder = "data/")
+#dev.off()
